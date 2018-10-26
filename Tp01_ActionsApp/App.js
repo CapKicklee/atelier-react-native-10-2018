@@ -14,7 +14,9 @@ export default class App extends React.Component {
     // état global de l'application
     // il y aura probalement d'autres informations à stocker
     state = {
-        texteSaisie: ''
+        texteSaisie: '',
+        actions: [],
+        filter: 'all'
     }
 
     /**
@@ -23,7 +25,8 @@ export default class App extends React.Component {
      * @param nouvelleSaisie la valeur saisie
      */
     quandLaSaisieChange(nouvelleSaisie) {
-        console.log('la saisie à changée', nouvelleSaisie)
+        console.log('la saisie a changé', nouvelleSaisie)
+        this.setState({ texteSaisie: nouvelleSaisie});
     }
 
     /**
@@ -31,20 +34,71 @@ export default class App extends React.Component {
      */
     validerNouvelleAction() {
         console.log('Vous avez cliqué sur Valider !')
+        this.setState(prev => ({
+            ...prev,
+            actions: [...prev.actions, { titre: this.state.texteSaisie, done: false }]
+        }));
+    }
+
+    supprimerAction = index => {
+        this.setState(prev => ({
+            ...prev,
+            actions: prev.actions.filter((v, i) => i !== index)
+        }))
+    }
+
+    terminerAction = index => {
+        this.setState(prev => ({
+            ...prev,
+            actions: prev.actions.map(
+                (action, i) => i === index ? {
+                    ...action,
+                    done: !action.done
+                } : action
+            )
+        }));
+    }
+
+    terminees = () => {
+        this.setState(prev => ({
+            filter: 'done'
+        }))
+    }
+
+    actives = () => {
+        this.setState(prev => ({
+            filter: 'active'
+        }))
+    }
+
+    all = () => {
+        this.setState(prev => ({
+            filter: 'all'
+        }))
+    }
+
+    filterActions() {
+        if (this.state.filter === 'done') {
+            return this.state.actions.filter((action, i) => action.done === true);
+        } else if (this.state.filter === 'active') {
+            return this.state.actions.filter((action, i) => action.done === false);
+        } else {
+            return this.state.actions;
+        }
     }
 
     render() {
-        const {texteSaisie} = this.state
+        const {texteSaisie, actions, filter} = this.state
 
         return (
             <View style={styles.conteneur}>
-                <ScrollView keyboardShouldPersistTaps='always' style={styles.content}>
+                <ScrollView keyboardShouldPersistTaps='never' style={styles.content}>
                     <Entete/>
                     <Saisie texteSaisie={texteSaisie} evtTexteModifie={(titre) => this.quandLaSaisieChange(titre)}/>
-                    <ListeActions />
+                    <ListeActions actions={this.filterActions()} onSupprimer={this.supprimerAction} onTerminer={this.terminerAction}/>
                     <BoutonCreer onValider={() => this.validerNouvelleAction()}/>
                 </ScrollView>
-                <Menu/>
+                <Menu all={this.all} actives={this.actives} terminees={this.terminees} />
             </View>
         )
     }
